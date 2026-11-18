@@ -19,10 +19,11 @@ provider = OpenRouterProvider(api_key=os.environ["OPENROUTER_API_KEY"])
 # Free models are shared and often rate-limited (HTTP 429).
 # FallbackModel tries each model in order until one succeeds.
 model = FallbackModel(
-    OpenAIChatModel("google/gemma-4-31b-it:free", provider=provider),
     OpenAIChatModel("nvidia/nemotron-3.5-lightning:free", provider=provider),
     OpenAIChatModel("nvidia/nemotron-3.5-super-vl:free", provider=provider),
+    OpenAIChatModel("google/gemma-4-31b-it:free", provider=provider),
 )
+
 agent = Agent(model, system_prompt="You are a helpful assistant.")
 
 app = FastAPI()
