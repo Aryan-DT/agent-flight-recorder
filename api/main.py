@@ -1,5 +1,5 @@
 import os
-
+from drone import get_drone_status
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -24,7 +24,14 @@ model = FallbackModel(
     OpenAIChatModel("google/gemma-4-31b-it:free", provider=provider),
 )
 
-agent = Agent(model, system_prompt="You are a helpful assistant.")
+agent = Agent(
+    model,
+    system_prompt=(
+        "You are the assistant for a WiFi-sensing drone. "
+        "Use the tools to check the drone and answer questions about it."
+    ),
+    tools=[get_drone_status],
+)
 
 app = FastAPI()
 
