@@ -29,6 +29,8 @@ export type Span = {
   input_tokens: number | null;
   output_tokens: number | null;
   cost: number | null;
+  input: string | null;
+  output: string | null;
 };
 
 export type TraceDetail = {
@@ -37,6 +39,7 @@ export type TraceDetail = {
   trace_start_time: string;
   input: string | null;
   output: string | null;
+  metadata: string | null;
   spans: Span[];
   trace_url: string;
 };
@@ -60,13 +63,24 @@ export async function listRuns(limit = 25): Promise<TraceSummary[]> {
 }
 
 export async function getRun(traceId: string): Promise<TraceDetail> {
-  return traceroot<TraceDetail>(`/traces/${encodeURIComponent(traceId)}`);
+  return traceroot<TraceDetail>(
+    `/traces/${encodeURIComponent(traceId)}?fields=core,usage,io`
+  );
 }
 
 export function parseFaults(metadata: Record<string, string> | undefined): string[] {
   try {
     const faults = JSON.parse(metadata?.faults ?? "[]");
     return Array.isArray(faults) ? faults : [];
+  } catch {
+    return [];
+  }
+}
+
+export function parseDetailFaults(metadata: string | null): string[] {
+  try {
+    const parsed = JSON.parse(metadata ?? "{}");
+    return Array.isArray(parsed?.faults) ? parsed.faults : [];
   } catch {
     return [];
   }
