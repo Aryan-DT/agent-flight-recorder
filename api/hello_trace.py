@@ -17,7 +17,6 @@ model = OpenAIChatModel(
 
 agent = Agent(model, system_prompt="You are a helpful assistant.")
 
-
 result = agent.run_sync("What is the capital of France?")
 print(result.output)
 traceroot.flush()
