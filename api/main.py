@@ -1,5 +1,5 @@
 import os
-from drone import get_drone_status
+from drone import get_drone_status, read_wifi_csi
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -30,7 +30,7 @@ agent = Agent(
         "You are the assistant for a WiFi-sensing drone. "
         "Use the tools to check the drone and answer questions about it."
     ),
-    tools=[get_drone_status],
+    tools=[get_drone_status, read_wifi_csi],
 )
 
 app = FastAPI()
