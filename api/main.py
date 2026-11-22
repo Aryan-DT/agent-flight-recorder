@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from pydantic_ai.models.fallback import FallbackModel
 from pydantic_ai.models.openai import OpenAIChatModel
@@ -18,6 +18,7 @@ from drone import (
     get_drone_status,
     read_wifi_csi,
 )
+from judge import Verdict, build_evidence, fetch_trace, judge_agent
 
 load_dotenv()
 traceroot.initialize(integrations=[Integration.PYDANTIC_AI])
@@ -76,3 +77,28 @@ async def chat(req: ChatRequest) -> ChatResponse:
     reply = await run_drone_agent(req.message, req.faults)
     return ChatResponse(reply=reply)
 
+
+
+class JudgeRequest(BaseModel):
+    trace_id: str = Field(pattern=r"^[0-9a-f]{32}$")
+
+
+@traceroot.observe(name="judge_run", type="agent")
+async def run_judge(trace_id: str) -> Verdict:
+    traceroot.update_current_trace(tags=["judge"], metadata={"judged_trace_id": trace_id})
+    trace = await fetch_trace(trace_id)
+    if not trace.get("output"):
+        # The agent never replied, so there is nothing for an LLM to grade.
+        return Verdict(
+            passed=False,
+            category="run_failed",
+            issues=["The run ended without a reply."],
+            explanation="The agent crashed or was rate-limited before answering.",
+        )
+    result = await judge_agent.run(build_evidence(trace), model=model)
+    return result.output
+
+
+@app.post("/judge")
+async def judge(req: JudgeRequest) -> Verdict:
+    return await run_judge(req.trace_id)
