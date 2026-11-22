@@ -1,3 +1,5 @@
+import { callPythonApi, pythonApiError } from "@/lib/python-api";
+
 const ALLOWED_FAULTS = ["sensor_timeout", "malformed_data", "wrong_units", "low_battery"];
 
 export async function POST(request: Request) {
@@ -19,17 +21,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Message is too long." }, { status: 400 });
   }
 
-  const res = await fetch(`${process.env.PYTHON_API_URL}/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, faults }),
-  });
-
-  if (!res.ok) {
-    return Response.json(
-      { error: "The drone agent failed. Try again." },
-      { status: 502 }
-    );
+  const res = await callPythonApi("/chat", { message, faults }, request);
+  if (!res?.ok) {
+    return pythonApiError(res, "The drone agent failed. Try again.");
   }
 
   const data = await res.json();

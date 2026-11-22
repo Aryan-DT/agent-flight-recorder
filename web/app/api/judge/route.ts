@@ -1,3 +1,4 @@
+import { callPythonApi, pythonApiError } from "@/lib/python-api";
 import { parseVerdict } from "@/lib/verdict";
 
 const TRACE_ID = /^[0-9a-f]{32}$/;
@@ -15,14 +16,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid trace id." }, { status: 400 });
   }
 
-  const res = await fetch(`${process.env.PYTHON_API_URL}/judge`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ trace_id: traceId }),
-  });
-
-  if (!res.ok) {
-    return Response.json({ error: "The judge failed. Try again." }, { status: 502 });
+  const res = await callPythonApi("/judge", { trace_id: traceId }, request);
+  if (!res?.ok) {
+    return pythonApiError(res, "The judge failed. Try again.");
   }
 
   const verdict = parseVerdict(await res.json());

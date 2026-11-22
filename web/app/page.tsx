@@ -25,6 +25,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [faults, setFaults] = useState<Fault[]>([]);
+  const [slow, setSlow] = useState(false);
 
   function toggleFault(id: Fault) {
     setFaults((prev) =>
@@ -40,6 +41,8 @@ export default function Home() {
     setInput("");
     setError(null);
     setLoading(true);
+    // The free server sleeps when idle, so the first request can take a while.
+    const slowTimer = setTimeout(() => setSlow(true), 8000);
 
     try {
       const res = await fetch("/api/chat", {
@@ -53,6 +56,8 @@ export default function Home() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
+      clearTimeout(slowTimer);
+      setSlow(false);
       setLoading(false);
     }
   }
@@ -62,7 +67,9 @@ export default function Home() {
       <header>
         <h1 className="text-2xl font-semibold">Agent Flight Recorder</h1>
         <p className="text-sm text-neutral-500">
-          Chat with a simulated WiFi-sensing drone. Every run is traced.
+          Chat with an AI agent for a WiFi-sensing drone (sensor data is simulated). Every run is
+          traced, and questions are visible in the public run inspector, so don&apos;t share anything
+          personal.
         </p>
       </header>
 
@@ -122,7 +129,13 @@ export default function Home() {
           </div>
         ))}
 
-        {loading && <p className="text-sm text-neutral-500">Drone is scanning…</p>}
+        {loading && (
+          <p className="text-sm text-neutral-500">
+            {slow
+              ? "Still working… the free server may be waking up, which can take up to a minute."
+              : "Drone is scanning…"}
+          </p>
+        )}
         {error && <p className="text-sm text-red-600">{error}</p>}
       </section>
 
