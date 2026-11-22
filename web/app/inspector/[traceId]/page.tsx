@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getRun, parseDetailFaults, parseQuestion, type Span } from "@/lib/traceroot";
+import { getRun, listVerdicts, parseDetailFaults, parseQuestion, type Span } from "@/lib/traceroot";
+import JudgePanel from "./judge-panel";
 
 const KIND_COLORS: Record<string, string> = {
   AGENT: "bg-purple-500",
@@ -23,7 +24,7 @@ function depthOf(span: Span, byId: Map<string, Span>): number {
 
 export default async function RunPage({ params }: PageProps<"/inspector/[traceId]">) {
   const { traceId } = await params;
-  const run = await getRun(traceId);
+  const [run, verdicts] = await Promise.all([getRun(traceId), listVerdicts()]);
 
   const spans = [...run.spans].sort((a, b) =>
     a.span_start_time.localeCompare(b.span_start_time)
@@ -66,6 +67,13 @@ export default async function RunPage({ params }: PageProps<"/inspector/[traceId
           {run.output ?? "(no reply: the run failed)"}
         </p>
       </header>
+
+      <JudgePanel
+        key={traceId}
+        traceId={traceId}
+        faults={faults}
+        initialVerdict={verdicts.get(traceId) ?? null}
+      />
 
       {spans.length === 0 ? (
         <p className="text-sm text-neutral-500">This trace has no spans.</p>

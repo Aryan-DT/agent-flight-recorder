@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { listRuns, parseFaults, parseQuestion } from "@/lib/traceroot";
+import { listRuns, listVerdicts, parseFaults, parseQuestion } from "@/lib/traceroot";
 
 function timeAgo(iso: string): string {
   const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
@@ -10,7 +10,7 @@ function timeAgo(iso: string): string {
 }
 
 export default async function InspectorPage() {
-  const runs = await listRuns();
+  const [runs, verdicts] = await Promise.all([listRuns(), listVerdicts()]);
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 p-4 sm:p-8">
@@ -18,7 +18,7 @@ export default async function InspectorPage() {
         <div>
           <h1 className="text-2xl font-semibold">Run inspector</h1>
           <p className="text-sm text-neutral-500">
-            Recent agent runs, read back from TraceRoot.
+            Recent agent runs and judge verdicts, read back from TraceRoot.
           </p>
         </div>
         <Link href="/" className="text-sm text-blue-600 hover:underline">
@@ -34,6 +34,7 @@ export default async function InspectorPage() {
         <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
           {runs.map((run) => {
             const faults = parseFaults(run.metadata_map);
+            const verdict = verdicts.get(run.trace_id);
             return (
               <li key={run.trace_id}>
                 <Link
@@ -68,6 +69,19 @@ export default async function InspectorPage() {
                     <span className={run.error_count > 0 ? "text-red-600" : ""}>
                       {run.error_count} errors
                     </span>
+                    {verdict ? (
+                      <span
+                        className={`rounded px-1.5 ${
+                          verdict.passed
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
+                        }`}
+                      >
+                        judge: {verdict.passed ? "✓ passed" : `✗ ${verdict.category}`}
+                      </span>
+                    ) : (
+                      <span>not judged</span>
+                    )}
                   </div>
                 </Link>
               </li>

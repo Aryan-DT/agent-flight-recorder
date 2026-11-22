@@ -1,3 +1,5 @@
+import { parseVerdict, type Verdict } from "./verdict";
+
 const BASE_URL = "https://app.traceroot.ai/api/v1/public";
 
 export type TraceSummary = {
@@ -92,4 +94,22 @@ export function parseQuestion(input: string | null): string {
   } catch {
     return input ?? "(no question)";
   }
+}
+
+// Verdicts are stored in TraceRoot itself: every judge call is traced as a
+// "judge_run" whose output is the verdict and whose metadata names the run it
+// judged. The list is newest first, so the first verdict per run wins.
+export async function listVerdicts(limit = 200): Promise<Map<string, Verdict>> {
+  const data = await traceroot<{ data: TraceSummary[] }>(
+    `/traces?name=judge_run&limit=${limit}`
+  );
+  const verdicts = new Map<string, Verdict>();
+  for (const t of data.data) {
+    const judgedId = t.metadata_map?.judged_trace_id;
+    const verdict = parseVerdict(t.output);
+    if (judgedId && verdict && !verdicts.has(judgedId)) {
+      verdicts.set(judgedId, verdict);
+    }
+  }
+  return verdicts;
 }
