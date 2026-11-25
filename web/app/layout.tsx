@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Agent Flight Recorder",
-  description: "A simulated WiFi-sensing drone that can detect motion",
+  description: "An AI agent for a WiFi-sensing drone, with every run traced, stress-tested and judged",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
